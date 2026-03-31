@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "dialect_ai_mobile",
-    "slug": "dialect_ai_mobile",
+    "name": "AI MƯỜNG",
+    "slug": "AI-MUONG",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo_muong.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -23,7 +23,7 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo_muong.png"
     }
   }
 }
