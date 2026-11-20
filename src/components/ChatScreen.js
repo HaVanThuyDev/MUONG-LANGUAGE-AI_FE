@@ -48,6 +48,10 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
   // Mode: "Đoạn chat" | "Đặc sắc văn hóa"
   const [activeMode, setActiveMode] = useState('chat'); // 'chat' | 'culture'
 
+  // Search state in sidebar
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Topic: "Ngôn ngữ thường ngày" | "Đời sống văn hóa" | "Phong tục tập quán"
   const [selectedTopic, setSelectedTopic] = useState('Ngôn ngữ thường ngày');
   const [topicDropdownOpen, setTopicDropdownOpen] = useState(false);
@@ -316,10 +320,38 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
 
             {/* Sidebar Menu Navigation */}
             <View style={styles.sidebarMenuList}>
-              <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
-                <SearchIcon size={16} color="#57534E" />
-                <Text style={styles.sidebarMenuText}>Tìm kiếm</Text>
-              </TouchableOpacity>
+              {isSearching ? (
+                <View style={styles.searchBarWrap}>
+                  <SearchIcon size={14} color="#78756E" />
+                  <TextInput
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Tìm kiếm..."
+                    placeholderTextColor="#A8A29E"
+                    autoFocus
+                  />
+                  <TouchableOpacity
+                    onPress={() => {
+                      setIsSearching(false);
+                      setSearchQuery('');
+                    }}
+                    style={{ padding: 2 }}
+                    activeOpacity={0.7}
+                  >
+                    <CloseIcon size={13} color="#78716C" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.sidebarMenuItem}
+                  onPress={() => setIsSearching(true)}
+                  activeOpacity={0.7}
+                >
+                  <SearchIcon size={16} color="#57534E" />
+                  <Text style={styles.sidebarMenuText}>Tìm kiếm</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
                 <FolderIcon size={16} color="#57534E" />
                 <Text style={styles.sidebarMenuText}>Dự án</Text>
@@ -343,36 +375,42 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
 
           {/* History List */}
           <ScrollView style={styles.historySection}>
-            {sessions.map((item) => {
-              const isActive = item.id === activeSessionId;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[styles.historyItem, isActive && styles.historyItemActive]}
-                  onPress={() => {
-                    setActiveSessionId(item.id);
-                    if (!isDesktop) setSidebarVisible(false);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.historyItemBullet}>○</Text>
-                  <Text
-                    style={[styles.historyItemText, isActive && styles.historyItemActiveText]}
-                    numberOfLines={1}
+            {sessions
+              .filter(
+                (item) =>
+                  !searchQuery.trim() ||
+                  item.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
+              )
+              .map((item) => {
+                const isActive = item.id === activeSessionId;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.historyItem, isActive && styles.historyItemActive]}
+                    onPress={() => {
+                      setActiveSessionId(item.id);
+                      if (!isDesktop) setSidebarVisible(false);
+                    }}
+                    activeOpacity={0.7}
                   >
-                    {item.title}
-                  </Text>
-                  {sessions.length > 1 && (
-                    <TouchableOpacity
-                      style={styles.deleteHistoryBtn}
-                      onPress={(e) => handleDeleteSession(item.id, e)}
+                    <Text style={styles.historyItemBullet}>○</Text>
+                    <Text
+                      style={[styles.historyItemText, isActive && styles.historyItemActiveText]}
+                      numberOfLines={1}
                     >
-                      <TrashIcon size={13} color="#A8A29E" />
-                    </TouchableOpacity>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+                      {item.title}
+                    </Text>
+                    {sessions.length > 1 && (
+                      <TouchableOpacity
+                        style={styles.deleteHistoryBtn}
+                        onPress={(e) => handleDeleteSession(item.id, e)}
+                      >
+                        <TrashIcon size={13} color="#A8A29E" />
+                      </TouchableOpacity>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
           </ScrollView>
 
           {/* Sidebar Footer: Profile */}
@@ -417,10 +455,6 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
             </TouchableOpacity>
 
             <Text style={styles.headerTitle}>AI Ngôn ngữ Mường</Text>
-          </View>
-
-          <View style={styles.headerBadge}>
-            <Text style={styles.headerBadgeText}>{selectedTopic}</Text>
           </View>
         </SafeAreaView>
 

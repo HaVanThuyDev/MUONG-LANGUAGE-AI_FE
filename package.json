@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "expo export -p web",
     "dev": "expo start",
     "start": "expo start",
     "android": "expo start --android",
