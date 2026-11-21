@@ -23,6 +23,7 @@ export default StyleSheet.create({
     paddingVertical: 28,
     borderWidth: 1,
     borderColor: CLAUDE_BORDER,
+    overflow: 'hidden',
     ...Platform.select({
       web: {
         boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
@@ -61,7 +62,7 @@ export default StyleSheet.create({
     maxWidth: 320,
   },
 
-  // SEGMENTED TABS: ĐĂNG NHẬP / ĐĂNG KÝ
+  // SEGMENTED TABS WITH SLIDING INDICATOR
   authTabsWrap: {
     flexDirection: 'row',
     backgroundColor: '#F3F2EE',
@@ -69,19 +70,34 @@ export default StyleSheet.create({
     padding: 3,
     marginTop: 18,
     marginBottom: 18,
+    position: 'relative',
+    height: 40,
+    alignItems: 'center',
+  },
+  slidingPill: {
+    position: 'absolute',
+    top: 3,
+    bottom: 3,
+    width: '50%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+      default: {
+        elevation: 2,
+      },
+    }),
   },
   authTabBtn: {
     flex: 1,
-    paddingVertical: 8,
+    height: '100%',
     alignItems: 'center',
-    borderRadius: 8,
+    justifyContent: 'center',
+    zIndex: 2,
     ...Platform.select({ web: { cursor: 'pointer' } }),
-  },
-  authTabBtnActive: {
-    backgroundColor: '#FFFFFF',
-    ...Platform.select({
-      web: { boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-    }),
   },
   authTabText: {
     fontSize: 13.5,

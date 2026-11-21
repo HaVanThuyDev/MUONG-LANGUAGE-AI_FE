@@ -17,7 +17,7 @@ export default StyleSheet.create({
     width: '100%',
   },
 
-  // SIDEBAR (SILKY-SMOOTH DRAWER ON MOBILE/TABLET, SIDE-BY-SIDE ON DESKTOP)
+  // SIDEBAR (SILKY-SMOOTH HARDWARE ACCELERATED DRAWER)
   sidebar: {
     width: 250,
     backgroundColor: CLAUDE_SIDEBAR,
@@ -26,6 +26,23 @@ export default StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'space-between',
     zIndex: 100,
+    ...Platform.select({
+      web: {
+        transition: 'width 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease',
+      },
+    }),
+  },
+  sidebarHiddenDesktop: {
+    width: 0,
+    borderRightWidth: 0,
+    overflow: 'hidden',
+  },
+  sidebarClosedDesktop: {
+    width: 0,
+    borderRightWidth: 0,
+    opacity: 0,
+    overflow: 'hidden',
+    pointerEvents: 'none',
   },
   sidebarOverlay: {
     position: 'absolute',
@@ -34,7 +51,10 @@ export default StyleSheet.create({
     bottom: 0,
     zIndex: 1000,
     ...Platform.select({
-      web: { boxShadow: '4px 0 28px rgba(0,0,0,0.12)' },
+      web: {
+        boxShadow: '4px 0 28px rgba(0,0,0,0.14)',
+        transition: 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+      },
       default: { elevation: 16 },
     }),
   },
@@ -42,9 +62,38 @@ export default StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.35)',
     zIndex: 900,
+    ...Platform.select({
+      web: {
+        transition: 'opacity 0.28s ease',
+      },
+    }),
   },
   sidebarHeader: {
     padding: 12,
+  },
+  // Top row inside sidebar with matching toggle button
+  sidebarTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  sidebarCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: CLAUDE_BORDER,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({ web: { cursor: 'pointer' } }),
+  },
+  sidebarBrandTitle: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: CLAUDE_TEXT,
+    flex: 1,
   },
   newChatClaudeBtn: {
     flexDirection: 'row',
@@ -386,7 +435,7 @@ export default StyleSheet.create({
   },
 
   // ==========================================
-  // RESPONSIVE CHAT INPUT CARD (CLAUDE EXACT)
+  // RESPONSIVE CHAT INPUT CARD (CLAUDE BALANCED)
   // ==========================================
   inputOuterContainer: {
     paddingHorizontal: 12,
@@ -424,9 +473,9 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: CLAUDE_BORDER,
     borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 8,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
     ...Platform.select({
       web: {
         outlineStyle: 'none',
@@ -439,12 +488,12 @@ export default StyleSheet.create({
     fontSize: 15,
     color: CLAUDE_TEXT,
     lineHeight: 22,
-    minHeight: 42,
+    minHeight: 44,
     maxHeight: 130,
     padding: 0,
     backgroundColor: 'transparent',
     borderWidth: 0,
-    marginBottom: 8,
+    marginBottom: 10,
     ...Platform.select({
       web: {
         outlineStyle: 'none',
@@ -455,24 +504,19 @@ export default StyleSheet.create({
     }),
   },
 
-  // BOTTOM CONTROLS BAR (RESPONSIVE FOR PHONE, IPAD, DESKTOP)
+  // BOTTOM CONTROLS BAR (BALANCED EQUAL BUTTONS)
   cardBottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 4,
+    paddingTop: 2,
     position: 'relative',
     zIndex: 50,
-  },
-  cardBottomBarMobile: {
-    flexWrap: 'wrap',
-    gap: 6,
-    rowGap: 8,
   },
   cardBottomLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   plusAttachBtn: {
     width: 32,
@@ -486,57 +530,39 @@ export default StyleSheet.create({
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
 
-  // Mode Segmented Pill: [Đoạn chat] [Đặc sắc văn hóa]
-  modeSegmentedWrap: {
-    flexDirection: 'row',
+  // "Đoạn chat" Pill (BALANCED: EXACT SAME HEIGHT & PADDING AS TOPIC SELECTOR)
+  chatPillBadge: {
+    height: 32,
     backgroundColor: '#F3F2EE',
-    borderRadius: 9,
-    padding: 2.5,
-    gap: 2,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  modeBtn: {
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 7,
-    ...Platform.select({ web: { cursor: 'pointer' } }),
-  },
-  modeBtnActive: {
-    backgroundColor: '#FFFFFF',
-    ...Platform.select({
-      web: { boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
-    }),
-  },
-  modeBtnText: {
-    fontSize: 12.5,
-    color: CLAUDE_MUTED,
+  chatPillText: {
+    fontSize: 13,
+    color: CLAUDE_TEXT,
     fontWeight: '500',
   },
-  modeBtnTextActive: {
-    color: CLAUDE_TEXT,
-    fontWeight: '600',
-  },
 
-  // Right Controls: [Chủ đề] [Send]
+  // Right Controls: [Chủ đề] [Send] (BALANCED: EXACT SAME HEIGHT & PADDING AS CHAT PILL)
   cardBottomRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
-  cardBottomRightMobile: {
-    marginLeft: 'auto',
+    gap: 8,
   },
   topicSelectorTrigger: {
+    height: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderRadius: 7,
-    gap: 4,
-    backgroundColor: '#F7F6F3',
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+    backgroundColor: '#F3F2EE',
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   topicSelectorText: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: CLAUDE_TEXT,
     fontWeight: '500',
   },
@@ -544,7 +570,7 @@ export default StyleSheet.create({
   // DROPDOWN MENU
   topicDropdownMenu: {
     position: 'absolute',
-    right: 36,
+    right: 40,
     bottom: 42,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -557,11 +583,6 @@ export default StyleSheet.create({
       web: { boxShadow: '0 6px 20px rgba(0,0,0,0.12)' },
     }),
   },
-  topicDropdownMenuMobile: {
-    right: 0,
-    bottom: 38,
-    width: 185,
-  },
   topicMenuItem: {
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -571,7 +592,7 @@ export default StyleSheet.create({
     backgroundColor: '#F3F2EE',
   },
   topicMenuItemText: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: CLAUDE_TEXT,
   },
   topicMenuItemTextActive: {

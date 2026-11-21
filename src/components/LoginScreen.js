@@ -9,9 +9,10 @@ import {
   Platform,
   Image,
   Animated,
+  Easing,
 } from 'react-native';
 import styles from './LoginScreen.styles';
-import { GoogleIcon, PhoneIcon } from './Icons';
+import { GoogleIcon } from './Icons';
 
 const LoginScreen = ({ onLogin }) => {
   const [tab, setTab] = useState('login'); // 'login' | 'register'
@@ -27,16 +28,44 @@ const LoginScreen = ({ onLogin }) => {
   const [regPhoneOrEmail, setRegPhoneOrEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  // Smooth switch animation
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  // Smooth sliding indicator animation (0 = Login, 1 = Register)
+  const tabAnim = useRef(new Animated.Value(0)).current;
+  const contentFadeAnim = useRef(new Animated.Value(1)).current;
+  const contentSlideAnim = useRef(new Animated.Value(0)).current;
 
   const handleSwitchTab = (newTab) => {
     if (newTab === tab) return;
-    Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
-    ]).start();
+
+    const toVal = newTab === 'register' ? 1 : 0;
+    const slideDirection = newTab === 'register' ? 20 : -20;
+
+    // Slide the tab indicator
+    Animated.timing(tabAnim, {
+      toValue: toVal,
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // needed for width/left interpolation
+    }).start();
+
+    // Slide & fade the form content
+    contentSlideAnim.setValue(slideDirection);
+    contentFadeAnim.setValue(0);
+
     setTab(newTab);
+
+    Animated.parallel([
+      Animated.timing(contentFadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentSlideAnim, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   const handleLoginSubmit = () => {
@@ -58,6 +87,12 @@ const LoginScreen = ({ onLogin }) => {
     onLogin('Google User');
   };
 
+  // Interpolate pill position
+  const pillLeft = tabAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['1%', '49.5%'],
+  });
+
   return (
     <SafeAreaView style={styles.loginContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#FBFBF9" />
@@ -75,10 +110,13 @@ const LoginScreen = ({ onLogin }) => {
           </Text>
         </View>
 
-        {/* Tab switch: Đăng nhập / Đăng ký */}
+        {/* Tab switch with SMOOTH SLIDING PILL */}
         <View style={styles.authTabsWrap}>
+          {/* Animated sliding background pill */}
+          <Animated.View style={[styles.slidingPill, { left: pillLeft }]} />
+
           <TouchableOpacity
-            style={[styles.authTabBtn, tab === 'login' && styles.authTabBtnActive]}
+            style={styles.authTabBtn}
             onPress={() => handleSwitchTab('login')}
             activeOpacity={0.8}
           >
@@ -88,7 +126,7 @@ const LoginScreen = ({ onLogin }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.authTabBtn, tab === 'register' && styles.authTabBtnActive]}
+            style={styles.authTabBtn}
             onPress={() => handleSwitchTab('register')}
             activeOpacity={0.8}
           >
@@ -98,8 +136,16 @@ const LoginScreen = ({ onLogin }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Form Container with smooth fade transition */}
-        <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
+        {/* Form Container with animated slide & fade transition */}
+        <Animated.View
+          style={[
+            styles.formContainer,
+            {
+              opacity: contentFadeAnim,
+              transform: [{ translateX: contentSlideAnim }],
+            },
+          ]}
+        >
           {tab === 'login' ? (
             /* TAB ĐĂNG NHẬP */
             <View>

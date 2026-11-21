@@ -46,13 +46,20 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
   const isTablet = width >= 640 && width < 1024;
   const isDesktop = width >= 1024;
 
-  // Sidebar animated state
-  const [sidebarMounted, setSidebarMounted] = useState(isDesktop);
-  const slideAnim = useRef(new Animated.Value(isDesktop ? 0 : -300)).current;
-  const backdropAnim = useRef(new Animated.Value(isDesktop ? 1 : 0)).current;
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
 
-  // Mode: "Đoạn chat" | "Đặc sắc văn hóa"
-  const [activeMode, setActiveMode] = useState('chat');
+  useEffect(() => {
+    setSidebarOpen(isDesktop);
+  }, [isDesktop]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => !prev);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
 
   // Search state in sidebar
   const [isSearching, setIsSearching] = useState(false);
@@ -90,55 +97,6 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
   const [selectedImage, setSelectedImage] = useState(null);
 
   const scrollRef = useRef(null);
-
-  // Smooth open sidebar (Drawer animation)
-  const openSidebar = () => {
-    setSidebarMounted(true);
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 250,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  // Smooth close sidebar (Drawer animation)
-  const closeSidebar = () => {
-    if (isDesktop) {
-      setSidebarMounted(false);
-      return;
-    }
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: -300,
-        duration: 220,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropAnim, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setSidebarMounted(false);
-    });
-  };
-
-  const toggleSidebar = () => {
-    if (sidebarMounted) {
-      closeSidebar();
-    } else {
-      openSidebar();
-    }
-  };
 
   // Sync sessions to localStorage on web
   useEffect(() => {
@@ -267,7 +225,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
       role: 'user',
       text: queryText,
       image: selectedImage ? { ...selectedImage } : null,
-      mode: activeMode,
+      mode: 'chat',
       topic: selectedTopic,
     };
 
@@ -347,41 +305,64 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
       <StatusBar barStyle="dark-content" backgroundColor="#FBFBF9" />
 
       {/* MOBILE / TABLET SMOOTH BACKDROP */}
-      {!isDesktop && sidebarMounted && (
-        <Animated.View
-          style={[styles.sidebarBackdrop, { opacity: backdropAnim }]}
-        >
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={closeSidebar}
-          />
-        </Animated.View>
-      )}
-
-      {/* SILKY SMOOTH SIDEBAR DRAWER */}
-      {sidebarMounted && (
-        <Animated.View
+      {!isDesktop && (
+        <View
           style={[
-            styles.sidebar,
-            !isDesktop && styles.sidebarOverlay,
-            !isDesktop && {
-              transform: [{ translateX: slideAnim }],
-              width: Math.min(270, width * 0.82),
+            styles.sidebarBackdrop,
+            {
+              opacity: sidebarOpen ? 1 : 0,
+              pointerEvents: sidebarOpen ? 'auto' : 'none',
             },
           ]}
         >
-          <SafeAreaView style={{ flex: 1 }}>
-            <View style={styles.sidebarHeader}>
-              {/* "+ Tạo mới" Claude Button */}
+          <TouchableOpacity
+            style={{ width: '100%', height: '100%' }}
+            activeOpacity={1}
+            onPress={closeSidebar}
+          />
+        </View>
+      )}
+
+      {/* SILKY SMOOTH SIDEBAR DRAWER */}
+      <View
+        style={[
+          styles.sidebar,
+          isDesktop
+            ? (!sidebarOpen && styles.sidebarClosedDesktop)
+            : [
+                styles.sidebarOverlay,
+                {
+                  width: Math.min(270, width * 0.82),
+                  transform: [{ translateX: sidebarOpen ? 0 : -320 }],
+                  pointerEvents: sidebarOpen ? 'auto' : 'none',
+                },
+              ],
+        ]}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.sidebarHeader}>
+            {/* Top row with Menu Toggle / Close button so clicking ☰ again closes it seamlessly */}
+            <View style={styles.sidebarTopRow}>
               <TouchableOpacity
-                style={styles.newChatClaudeBtn}
-                onPress={handleNewChat}
+                style={styles.sidebarCloseBtn}
+                onPress={closeSidebar}
                 activeOpacity={0.7}
+                title="Đóng menu"
               >
-                <PlusIcon size={16} color="#2E2C29" />
-                <Text style={styles.newChatClaudeText}>Tạo mới</Text>
+                <MenuIcon size={17} color="#57534E" />
               </TouchableOpacity>
+              <Text style={styles.sidebarBrandTitle}>AI Ngôn ngữ Mường</Text>
+            </View>
+
+            {/* "+ Tạo mới" Claude Button */}
+            <TouchableOpacity
+              style={styles.newChatClaudeBtn}
+              onPress={handleNewChat}
+              activeOpacity={0.7}
+            >
+              <PlusIcon size={16} color="#2E2C29" />
+              <Text style={styles.newChatClaudeText}>Tạo mới</Text>
+            </TouchableOpacity>
 
               {/* Sidebar Menu Navigation */}
               <View style={styles.sidebarMenuList}>
@@ -503,8 +484,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
               </View>
             </View>
           </SafeAreaView>
-        </Animated.View>
-      )}
+        </View>
 
       {/* MAIN CHAT AREA */}
       <View style={styles.mainContainer}>
@@ -515,7 +495,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
               style={styles.menuToggleBtn}
               onPress={toggleSidebar}
               activeOpacity={0.7}
-              title={sidebarMounted ? 'Thu gọn menu' : 'Mở menu'}
+              title={sidebarOpen ? 'Thu gọn menu' : 'Mở menu'}
             >
               <MenuIcon size={17} color="#57534E" />
             </TouchableOpacity>
@@ -640,151 +620,100 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                   blurOnSubmit={false}
                 />
 
-                {/* Bottom Controls Bar (Responsive) */}
-                <View style={[styles.cardBottomBar, isMobile && styles.cardBottomBarMobile]}>
-                  {/* Left: [+] [Đoạn chat] [Đặc sắc văn hóa] */}
-                  <View style={[styles.cardBottomLeft, isMobile && styles.cardBottomLeftMobile]}>
+                {/* Bottom Controls Bar (Responsive & Balanced) */}
+                <View style={styles.cardBottomBar}>
+                  {/* Left: [+] [Đoạn chat] */}
+                  <View style={styles.cardBottomLeft}>
                     {/* [+] Upload Image/File Button */}
                     <TouchableOpacity
-                      style={[styles.plusAttachBtn, isMobile && { width: 30, height: 30 }]}
+                      style={styles.plusAttachBtn}
                       onPress={handlePickImage}
                       activeOpacity={0.7}
                       title="Đính kèm ảnh hoặc tệp"
                     >
-                      <PlusIcon size={isMobile ? 14 : 15} color="#57534E" />
+                      <PlusIcon size={15} color="#57534E" />
                     </TouchableOpacity>
 
-                    {/* Segmented Pill: [Đoạn chat] [Đặc sắc văn hóa] */}
-                    <View style={[styles.modeSegmentedWrap, isMobile && { padding: 2 }]}>
-                      <TouchableOpacity
-                        style={[
-                          styles.modeBtn,
-                          isMobile && { paddingHorizontal: 7, paddingVertical: 4.5 },
-                          activeMode === 'chat' && styles.modeBtnActive,
-                        ]}
-                        onPress={() => setActiveMode('chat')}
-                        activeOpacity={0.8}
-                      >
-                        <Text
-                          style={[
-                            styles.modeBtnText,
-                            isMobile && { fontSize: 11.5 },
-                            activeMode === 'chat' && styles.modeBtnTextActive,
-                          ]}
-                        >
-                          Đoạn chat
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.modeBtn,
-                          isMobile && { paddingHorizontal: 7, paddingVertical: 4.5 },
-                          activeMode === 'culture' && styles.modeBtnActive,
-                        ]}
-                        onPress={() => setActiveMode('culture')}
-                        activeOpacity={0.8}
-                      >
-                        <Text
-                          style={[
-                            styles.modeBtnText,
-                            isMobile && { fontSize: 11.5 },
-                            activeMode === 'culture' && styles.modeBtnTextActive,
-                          ]}
-                        >
-                          Đặc sắc văn hóa
-                        </Text>
-                      </TouchableOpacity>
+                    {/* Claude Mode Badge: [Đoạn chat] */}
+                    <View style={styles.chatPillBadge}>
+                      <Text style={styles.chatPillText}>Đoạn chat</Text>
                     </View>
                   </View>
 
                   {/* Right: [Topic Selector] [Send Button] */}
-                  <View style={[styles.cardBottomRight, isMobile && styles.cardBottomRightMobile]}>
+                  <View style={styles.cardBottomRight}>
                     {/* Topic Selector Trigger */}
                     <TouchableOpacity
-                      style={[
-                        styles.topicSelectorTrigger,
-                        isMobile && { paddingVertical: 4.5, paddingHorizontal: 7 },
-                      ]}
+                      style={styles.topicSelectorTrigger}
                       onPress={() => setTopicDropdownOpen((prev) => !prev)}
                       activeOpacity={0.7}
+                      title="Chọn chủ đề"
                       {...(Platform.OS === 'web'
                         ? {
                             onMouseEnter: () => setTopicDropdownOpen(true),
                           }
                         : {})}
                     >
-                      <Text
-                        style={[
-                          styles.topicSelectorText,
-                          isMobile && { fontSize: 11.5, maxWidth: 110 },
-                        ]}
-                        numberOfLines={1}
-                      >
+                      <Text style={styles.topicSelectorText} numberOfLines={1}>
                         {selectedTopic}
                       </Text>
-                      <ChevronDownIcon size={isMobile ? 10 : 12} color="#78756E" />
+                      <ChevronDownIcon size={12} color="#78756E" />
                     </TouchableOpacity>
 
                     {/* Send Button */}
                     <TouchableOpacity
                       style={[
                         styles.claudeSendBtn,
-                        isMobile && { width: 30, height: 30 },
-                        (!text.trim() && !selectedImage) || loading
-                          ? styles.claudeSendBtnDisabled
-                          : null,
+                        ((!text.trim() && !selectedImage) || loading) && styles.claudeSendBtnDisabled,
                       ]}
                       onPress={sendChat}
                       disabled={(!text.trim() && !selectedImage) || loading}
                       activeOpacity={0.8}
+                      title="Gửi tin nhắn"
                     >
-                      <ArrowUpIcon size={isMobile ? 13 : 15} color="#FFFFFF" />
+                      <ArrowUpIcon size={15} color="#FFFFFF" />
                     </TouchableOpacity>
                   </View>
-
-                  {/* Dropdown Menu for Topic Selection */}
-                  {topicDropdownOpen && (
-                    <View
-                      style={[
-                        styles.topicDropdownMenu,
-                        isMobile && styles.topicDropdownMenuMobile,
-                      ]}
-                      {...(Platform.OS === 'web'
-                        ? {
-                            onMouseLeave: () => setTopicDropdownOpen(false),
-                          }
-                        : {})}
-                    >
-                      {TOPIC_OPTIONS.map((topic) => {
-                        const isSelected = topic === selectedTopic;
-                        return (
-                          <TouchableOpacity
-                            key={topic}
-                            style={[
-                              styles.topicMenuItem,
-                              isSelected && styles.topicMenuItemActive,
-                            ]}
-                            onPress={() => {
-                              setSelectedTopic(topic);
-                              setTopicDropdownOpen(false);
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <Text
-                              style={[
-                                styles.topicMenuItemText,
-                                isSelected && styles.topicMenuItemTextActive,
-                              ]}
-                            >
-                              {topic}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  )}
                 </View>
+
+                {/* Dropdown Menu for Topic Selection */}
+                {topicDropdownOpen && (
+                  <View
+                    style={styles.topicDropdownMenu}
+                    {...(Platform.OS === 'web'
+                      ? {
+                          onMouseLeave: () => setTopicDropdownOpen(false),
+                        }
+                      : {})}
+                  >
+                    {TOPIC_OPTIONS.map((topic) => {
+                      const isSelected = topic === selectedTopic;
+                      return (
+                        <TouchableOpacity
+                          key={topic}
+                          style={[
+                            styles.topicMenuItem,
+                            isSelected && styles.topicMenuItemActive,
+                          ]}
+                          onPress={() => {
+                            setSelectedTopic(topic);
+                            setTopicDropdownOpen(false);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.topicMenuItemText,
+                              isSelected && styles.topicMenuItemTextActive,
+                            ]}
+                          >
+                            {topic}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
             </View>
           </View>
