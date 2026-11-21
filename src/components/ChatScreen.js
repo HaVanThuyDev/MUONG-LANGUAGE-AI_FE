@@ -11,6 +11,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
+  Animated,
+  Easing,
   Alert,
 } from 'react-native';
 import styles from './ChatScreen.styles.js';
@@ -29,7 +31,7 @@ import {
 import { chatWithMuongAI } from '../service/chatService.js';
 import { analyzeMuongImage } from '../service/imageAnalysisService.js';
 
-const STORAGE_KEY = 'muong_chat_claude_v2';
+const STORAGE_KEY = 'muong_chat_claude_v3';
 const DEFAULT_REGION = 'TIẾNG MƯỜNG';
 
 const TOPIC_OPTIONS = [
@@ -44,17 +46,19 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
   const isTablet = width >= 640 && width < 1024;
   const isDesktop = width >= 1024;
 
-  // Sidebar toggle state (closed by default on mobile/tablet, open on desktop)
-  const [sidebarVisible, setSidebarVisible] = useState(isDesktop);
+  // Sidebar animated state
+  const [sidebarMounted, setSidebarMounted] = useState(isDesktop);
+  const slideAnim = useRef(new Animated.Value(isDesktop ? 0 : -300)).current;
+  const backdropAnim = useRef(new Animated.Value(isDesktop ? 1 : 0)).current;
 
   // Mode: "Đoạn chat" | "Đặc sắc văn hóa"
-  const [activeMode, setActiveMode] = useState('chat'); // 'chat' | 'culture'
+  const [activeMode, setActiveMode] = useState('chat');
 
   // Search state in sidebar
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Topic: "Ngôn ngữ thường ngày" | "Đời sống văn hóa" | "Phong tục tập quán"
+  // Topic selector
   const [selectedTopic, setSelectedTopic] = useState('Ngôn ngữ thường ngày');
   const [topicDropdownOpen, setTopicDropdownOpen] = useState(false);
 
@@ -83,9 +87,58 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
   // Input states
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null); // { uri, name, type }
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const scrollRef = useRef(null);
+
+  // Smooth open sidebar (Drawer animation)
+  const openSidebar = () => {
+    setSidebarMounted(true);
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Smooth close sidebar (Drawer animation)
+  const closeSidebar = () => {
+    if (isDesktop) {
+      setSidebarMounted(false);
+      return;
+    }
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -300,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setSidebarMounted(false);
+    });
+  };
+
+  const toggleSidebar = () => {
+    if (sidebarMounted) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  };
 
   // Sync sessions to localStorage on web
   useEffect(() => {
@@ -139,7 +192,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
     setActiveSessionId(newSession.id);
     setText('');
     setSelectedImage(null);
-    if (!isDesktop) setSidebarVisible(false);
+    if (!isDesktop) closeSidebar();
   };
 
   // Delete session
@@ -246,21 +299,17 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
               aiText += '\n\n' + apiResult.data.reply;
             }
           } catch (e) {
-            // Không làm gì, giữ kết quả phân tích ảnh
+            // Keep local analysis
           }
         }
       } else {
-        try {
-          const apiResult = await chatWithMuongAI({
-            user_id: 1,
-            text: queryText,
-            region_hint: DEFAULT_REGION,
-          });
+        const apiResult = await chatWithMuongAI({
+          user_id: 1,
+          text: queryText,
+          region_hint: DEFAULT_REGION,
+        });
 
-          aiText = apiResult?.data?.reply || 'Chưa có câu trả lời.';
-        } catch (apiError) {
-          aiText = 'Chưa có câu trả lời.';
-        }
+        aiText = apiResult?.data?.reply || 'Chưa có câu trả lời.';
       }
 
       updateCurrentSessionMessages((prev) => [
@@ -297,155 +346,164 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FBFBF9" />
 
-      {/* MOBILE / TABLET BACKDROP */}
-      {!isDesktop && sidebarVisible && (
-        <TouchableOpacity
-          style={styles.sidebarBackdrop}
-          activeOpacity={1}
-          onPress={() => setSidebarVisible(false)}
-        />
+      {/* MOBILE / TABLET SMOOTH BACKDROP */}
+      {!isDesktop && sidebarMounted && (
+        <Animated.View
+          style={[styles.sidebarBackdrop, { opacity: backdropAnim }]}
+        >
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={closeSidebar}
+          />
+        </Animated.View>
       )}
 
-      {/* SIDEBAR (CLAUDE EXACT STYLE) */}
-      {sidebarVisible && (
-        <SafeAreaView
+      {/* SILKY SMOOTH SIDEBAR DRAWER */}
+      {sidebarMounted && (
+        <Animated.View
           style={[
             styles.sidebar,
             !isDesktop && styles.sidebarOverlay,
-            isMobile && { width: Math.min(280, width * 0.85) },
+            !isDesktop && {
+              transform: [{ translateX: slideAnim }],
+              width: Math.min(270, width * 0.82),
+            },
           ]}
         >
-          <View style={styles.sidebarHeader}>
-            {/* "+ Tạo mới" Claude Button */}
-            <TouchableOpacity
-              style={styles.newChatClaudeBtn}
-              onPress={handleNewChat}
-              activeOpacity={0.7}
-            >
-              <PlusIcon size={16} color="#2E2C29" />
-              <Text style={styles.newChatClaudeText}>Tạo mới</Text>
-            </TouchableOpacity>
-
-            {/* Sidebar Menu Navigation */}
-            <View style={styles.sidebarMenuList}>
-              {isSearching ? (
-                <View style={styles.searchBarWrap}>
-                  <SearchIcon size={14} color="#78756E" />
-                  <TextInput
-                    style={styles.searchInput}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    placeholder="Tìm kiếm..."
-                    placeholderTextColor="#A8A29E"
-                    autoFocus
-                  />
-                  <TouchableOpacity
-                    onPress={() => {
-                      setIsSearching(false);
-                      setSearchQuery('');
-                    }}
-                    style={{ padding: 2 }}
-                    activeOpacity={0.7}
-                  >
-                    <CloseIcon size={13} color="#78716C" />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.sidebarMenuItem}
-                  onPress={() => setIsSearching(true)}
-                  activeOpacity={0.7}
-                >
-                  <SearchIcon size={16} color="#57534E" />
-                  <Text style={styles.sidebarMenuText}>Tìm kiếm</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
-                <FolderIcon size={16} color="#57534E" />
-                <Text style={styles.sidebarMenuText}>Dự án</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
-                <BookIcon size={16} color="#57534E" />
-                <Text style={styles.sidebarMenuText}>Từ điển Mường</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
-                <SparklesIcon size={16} color="#57534E" />
-                <Text style={styles.sidebarMenuText}>Đặc sắc văn hóa</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Section Header */}
-            <View style={styles.historySectionHeader}>
-              <Text style={styles.historySectionTitle}>Đoạn chat và tác vụ</Text>
-              <ChevronDownIcon size={12} color="#78756E" />
-            </View>
-          </View>
-
-          {/* History List */}
-          <ScrollView style={styles.historySection}>
-            {sessions
-              .filter(
-                (item) =>
-                  !searchQuery.trim() ||
-                  item.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
-              )
-              .map((item) => {
-                const isActive = item.id === activeSessionId;
-                return (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[styles.historyItem, isActive && styles.historyItemActive]}
-                    onPress={() => {
-                      setActiveSessionId(item.id);
-                      if (!isDesktop) setSidebarVisible(false);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.historyItemBullet}>○</Text>
-                    <Text
-                      style={[styles.historyItemText, isActive && styles.historyItemActiveText]}
-                      numberOfLines={1}
-                    >
-                      {item.title}
-                    </Text>
-                    {sessions.length > 1 && (
-                      <TouchableOpacity
-                        style={styles.deleteHistoryBtn}
-                        onPress={(e) => handleDeleteSession(item.id, e)}
-                      >
-                        <TrashIcon size={13} color="#A8A29E" />
-                      </TouchableOpacity>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-          </ScrollView>
-
-          {/* Sidebar Footer: Profile */}
-          <View style={styles.sidebarFooter}>
-            <View style={styles.userProfileRow}>
-              <View style={styles.userProfileLeft}>
-                <View style={styles.userAvatarCircle}>
-                  <Text style={styles.userAvatarText}>
-                    {username ? username.charAt(0).toLowerCase() : 'x'}
-                  </Text>
-                </View>
-                <View style={styles.userProfileNameWrap}>
-                  <Text style={styles.userName} numberOfLines={1}>{username}</Text>
-                  <Text style={styles.userTier}>• Tiếng Mường</Text>
-                </View>
-              </View>
-
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.sidebarHeader}>
+              {/* "+ Tạo mới" Claude Button */}
               <TouchableOpacity
-                style={styles.logoutBtn}
-                onPress={onLogout}
+                style={styles.newChatClaudeBtn}
+                onPress={handleNewChat}
                 activeOpacity={0.7}
               >
-                <Text style={styles.logoutText}>Thoát</Text>
+                <PlusIcon size={16} color="#2E2C29" />
+                <Text style={styles.newChatClaudeText}>Tạo mới</Text>
               </TouchableOpacity>
+
+              {/* Sidebar Menu Navigation */}
+              <View style={styles.sidebarMenuList}>
+                {isSearching ? (
+                  <View style={styles.searchBarWrap}>
+                    <SearchIcon size={14} color="#78756E" />
+                    <TextInput
+                      style={styles.searchInput}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Tìm kiếm..."
+                      placeholderTextColor="#A8A29E"
+                      autoFocus
+                    />
+                    <TouchableOpacity
+                      onPress={() => {
+                        setIsSearching(false);
+                        setSearchQuery('');
+                      }}
+                      style={{ padding: 2 }}
+                      activeOpacity={0.7}
+                    >
+                      <CloseIcon size={13} color="#78716C" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.sidebarMenuItem}
+                    onPress={() => setIsSearching(true)}
+                    activeOpacity={0.7}
+                  >
+                    <SearchIcon size={16} color="#57534E" />
+                    <Text style={styles.sidebarMenuText}>Tìm kiếm</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
+                  <FolderIcon size={16} color="#57534E" />
+                  <Text style={styles.sidebarMenuText}>Dự án</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
+                  <BookIcon size={16} color="#57534E" />
+                  <Text style={styles.sidebarMenuText}>Từ điển Mường</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sidebarMenuItem} activeOpacity={0.7}>
+                  <SparklesIcon size={16} color="#57534E" />
+                  <Text style={styles.sidebarMenuText}>Đặc sắc văn hóa</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Section Header */}
+              <View style={styles.historySectionHeader}>
+                <Text style={styles.historySectionTitle}>Đoạn chat và tác vụ</Text>
+                <ChevronDownIcon size={12} color="#78756E" />
+              </View>
             </View>
-          </View>
-        </SafeAreaView>
+
+            {/* History List */}
+            <ScrollView style={styles.historySection}>
+              {sessions
+                .filter(
+                  (item) =>
+                    !searchQuery.trim() ||
+                    item.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                )
+                .map((item) => {
+                  const isActive = item.id === activeSessionId;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.historyItem, isActive && styles.historyItemActive]}
+                      onPress={() => {
+                        setActiveSessionId(item.id);
+                        if (!isDesktop) closeSidebar();
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.historyItemBullet}>○</Text>
+                      <Text
+                        style={[styles.historyItemText, isActive && styles.historyItemActiveText]}
+                        numberOfLines={1}
+                      >
+                        {item.title}
+                      </Text>
+                      {sessions.length > 1 && (
+                        <TouchableOpacity
+                          style={styles.deleteHistoryBtn}
+                          onPress={(e) => handleDeleteSession(item.id, e)}
+                        >
+                          <TrashIcon size={13} color="#A8A29E" />
+                        </TouchableOpacity>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+            </ScrollView>
+
+            {/* Sidebar Footer: Profile */}
+            <View style={styles.sidebarFooter}>
+              <View style={styles.userProfileRow}>
+                <View style={styles.userProfileLeft}>
+                  <View style={styles.userAvatarCircle}>
+                    <Text style={styles.userAvatarText}>
+                      {username ? username.charAt(0).toLowerCase() : 'x'}
+                    </Text>
+                  </View>
+                  <View style={styles.userProfileNameWrap}>
+                    <Text style={styles.userName} numberOfLines={1}>{username}</Text>
+                    <Text style={styles.userTier}>• Tiếng Mường</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.logoutBtn}
+                  onPress={onLogout}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.logoutText}>Thoát</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </SafeAreaView>
+        </Animated.View>
       )}
 
       {/* MAIN CHAT AREA */}
@@ -455,11 +513,11 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
           <View style={styles.topBarLeft}>
             <TouchableOpacity
               style={styles.menuToggleBtn}
-              onPress={() => setSidebarVisible((prev) => !prev)}
+              onPress={toggleSidebar}
               activeOpacity={0.7}
-              title={sidebarVisible ? 'Thu gọn menu' : 'Mở menu'}
+              title={sidebarMounted ? 'Thu gọn menu' : 'Mở menu'}
             >
-              <MenuIcon size={16} color="#57534E" />
+              <MenuIcon size={17} color="#57534E" />
             </TouchableOpacity>
 
             <Text style={styles.headerTitle}>AI Ngôn ngữ Mường</Text>
@@ -484,10 +542,10 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
               <View style={[styles.welcomeWrap, isMobile && styles.welcomeWrapMobile]}>
                 <Image
                   source={require('../../assets/logo_muong.png')}
-                  style={[styles.welcomeLogo, isMobile && { width: 40, height: 40, borderRadius: 20 }]}
+                  style={[styles.welcomeLogo, isMobile && { width: 42, height: 42, borderRadius: 21 }]}
                 />
-                <Text style={[styles.welcomeTitle, isMobile && { fontSize: 18.5 }]}>AI Ngôn ngữ Mường</Text>
-                <Text style={[styles.welcomeDesc, isMobile && { fontSize: 12.5, maxWidth: 300 }]}>
+                <Text style={[styles.welcomeTitle, isMobile && { fontSize: 19 }]}>AI Ngôn ngữ Mường</Text>
+                <Text style={[styles.welcomeDesc, isMobile && { fontSize: 13, maxWidth: 320 }]}>
                   Tra cứu từ vựng và giải đáp văn hóa dân tộc Mường
                 </Text>
               </View>
@@ -542,7 +600,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
           </ScrollView>
 
           {/* ======================================================== */}
-          {/* CLAUDE EXACT CHAT INPUT CARD (MATCHING USER SCREENSHOT 2) */}
+          {/* CLAUDE CHAT INPUT CARD (FULL RESPONSIVE) */}
           {/* ======================================================== */}
           <View style={styles.inputOuterContainer}>
             <View style={styles.inputCardContainer}>
@@ -582,7 +640,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                   blurOnSubmit={false}
                 />
 
-                {/* Bottom Controls Bar (Image 2 - Responsive) */}
+                {/* Bottom Controls Bar (Responsive) */}
                 <View style={[styles.cardBottomBar, isMobile && styles.cardBottomBarMobile]}>
                   {/* Left: [+] [Đoạn chat] [Đặc sắc văn hóa] */}
                   <View style={[styles.cardBottomLeft, isMobile && styles.cardBottomLeftMobile]}>
@@ -601,7 +659,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                       <TouchableOpacity
                         style={[
                           styles.modeBtn,
-                          isMobile && { paddingHorizontal: 7, paddingVertical: 4 },
+                          isMobile && { paddingHorizontal: 7, paddingVertical: 4.5 },
                           activeMode === 'chat' && styles.modeBtnActive,
                         ]}
                         onPress={() => setActiveMode('chat')}
@@ -621,7 +679,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                       <TouchableOpacity
                         style={[
                           styles.modeBtn,
-                          isMobile && { paddingHorizontal: 7, paddingVertical: 4 },
+                          isMobile && { paddingHorizontal: 7, paddingVertical: 4.5 },
                           activeMode === 'culture' && styles.modeBtnActive,
                         ]}
                         onPress={() => setActiveMode('culture')}
@@ -642,11 +700,11 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
 
                   {/* Right: [Topic Selector] [Send Button] */}
                   <View style={[styles.cardBottomRight, isMobile && styles.cardBottomRightMobile]}>
-                    {/* Topic Selector Trigger (Sonet 5.5 replaced with Topics) */}
+                    {/* Topic Selector Trigger */}
                     <TouchableOpacity
                       style={[
                         styles.topicSelectorTrigger,
-                        isMobile && { paddingVertical: 4, paddingHorizontal: 7 },
+                        isMobile && { paddingVertical: 4.5, paddingHorizontal: 7 },
                       ]}
                       onPress={() => setTopicDropdownOpen((prev) => !prev)}
                       activeOpacity={0.7}

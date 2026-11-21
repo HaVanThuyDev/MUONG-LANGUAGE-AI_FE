@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Text,
   View,
@@ -8,72 +8,258 @@ import {
   SafeAreaView,
   Platform,
   Image,
+  Animated,
 } from 'react-native';
 import styles from './LoginScreen.styles';
+import { GoogleIcon, PhoneIcon } from './Icons';
 
 const LoginScreen = ({ onLogin }) => {
-  const [username, setUsername] = useState('Người dùng');
+  const [tab, setTab] = useState('login'); // 'login' | 'register'
+  const [loginMethod, setLoginMethod] = useState('account'); // 'account' | 'phone'
+
+  // Form states
+  const [username, setUsername] = useState('Người dùng xứ Mường');
+  const [phoneNumber, setPhoneNumber] = useState('0987654321');
   const [password, setPassword] = useState('123456');
 
-  const handleLogin = () => {
-    if (username.trim()) {
-      onLogin(username.trim());
+  // Register form states
+  const [regFullName, setRegFullName] = useState('');
+  const [regPhoneOrEmail, setRegPhoneOrEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+
+  // Smooth switch animation
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const handleSwitchTab = (newTab) => {
+    if (newTab === tab) return;
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
+    ]).start();
+    setTab(newTab);
+  };
+
+  const handleLoginSubmit = () => {
+    if (loginMethod === 'phone') {
+      const phone = phoneNumber.trim() || '0987654321';
+      onLogin(`User ${phone.slice(-4)}`);
+    } else {
+      const user = username.trim() || 'Người dùng';
+      onLogin(user);
     }
+  };
+
+  const handleRegisterSubmit = () => {
+    const name = regFullName.trim() || regPhoneOrEmail.trim() || 'Thành viên mới';
+    onLogin(name);
+  };
+
+  const handleGoogleLogin = () => {
+    onLogin('Google User');
   };
 
   return (
     <SafeAreaView style={styles.loginContainer}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FBFBF9" />
 
       <View style={styles.loginCard}>
-        <Image
-          source={require('../../assets/logo_muong.png')}
-          style={styles.logo}
-        />
-
-        <Text style={styles.loginTitle}>AI Ngôn ngữ Mường</Text>
-        <Text style={styles.loginSubtitle}>
-          Hệ thống tra cứu và giải đáp ngôn ngữ, văn hóa Mường
-        </Text>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Tên đăng nhập</Text>
-          <TextInput
-            style={[
-              styles.input,
-              Platform.OS === 'web' && { outlineStyle: 'none' },
-            ]}
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Nhập tên đăng nhập"
-            placeholderTextColor="#94A3B8"
-            onSubmitEditing={handleLogin}
+        {/* Logo and Greeting */}
+        <View style={styles.logoRow}>
+          <Image
+            source={require('../../assets/logo_muong.png')}
+            style={styles.logo}
           />
+          <Text style={styles.loginTitle}>AI Ngôn ngữ Mường</Text>
+          <Text style={styles.loginSubtitle}>
+            Tra cứu từ vựng và giải đáp văn hóa dân tộc Mường
+          </Text>
         </View>
 
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Mật khẩu</Text>
-          <TextInput
-            style={[
-              styles.input,
-              Platform.OS === 'web' && { outlineStyle: 'none' },
-            ]}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Nhập mật khẩu"
-            placeholderTextColor="#94A3B8"
-            secureTextEntry
-            onSubmitEditing={handleLogin}
-          />
+        {/* Tab switch: Đăng nhập / Đăng ký */}
+        <View style={styles.authTabsWrap}>
+          <TouchableOpacity
+            style={[styles.authTabBtn, tab === 'login' && styles.authTabBtnActive]}
+            onPress={() => handleSwitchTab('login')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.authTabText, tab === 'login' && styles.authTabTextActive]}>
+              Đăng nhập
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.authTabBtn, tab === 'register' && styles.authTabBtnActive]}
+            onPress={() => handleSwitchTab('register')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.authTabText, tab === 'register' && styles.authTabTextActive]}>
+              Đăng ký
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.loginBtn}
-          onPress={handleLogin}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.loginBtnText}>Đăng nhập</Text>
-        </TouchableOpacity>
+        {/* Form Container with smooth fade transition */}
+        <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
+          {tab === 'login' ? (
+            /* TAB ĐĂNG NHẬP */
+            <View>
+              {/* Method Toggle: Tài khoản / Số điện thoại */}
+              <View style={styles.methodToggleRow}>
+                <TouchableOpacity
+                  onPress={() => setLoginMethod('account')}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.methodToggleText,
+                      loginMethod === 'account' && styles.methodToggleTextActive,
+                    ]}
+                  >
+                    Tên đăng nhập
+                  </Text>
+                </TouchableOpacity>
+
+                <Text style={{ color: '#D6D3CD' }}>|</Text>
+
+                <TouchableOpacity
+                  onPress={() => setLoginMethod('phone')}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.methodToggleText,
+                      loginMethod === 'phone' && styles.methodToggleTextActive,
+                    ]}
+                  >
+                    Số điện thoại
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {loginMethod === 'phone' ? (
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Số điện thoại</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    placeholder="Nhập số điện thoại (vd: 0987...)"
+                    placeholderTextColor="#A8A29E"
+                    keyboardType="phone-pad"
+                    onSubmitEditing={handleLoginSubmit}
+                  />
+                </View>
+              ) : (
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Tên đăng nhập</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={username}
+                    onChangeText={setUsername}
+                    placeholder="Nhập tên đăng nhập"
+                    placeholderTextColor="#A8A29E"
+                    onSubmitEditing={handleLoginSubmit}
+                  />
+                </View>
+              )}
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Mật khẩu</Text>
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Nhập mật khẩu"
+                  placeholderTextColor="#A8A29E"
+                  secureTextEntry
+                  onSubmitEditing={handleLoginSubmit}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.submitBtn}
+                onPress={handleLoginSubmit}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.submitBtnText}>Đăng nhập</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            /* TAB ĐĂNG KÝ */
+            <View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Họ và tên / Danh xưng</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regFullName}
+                  onChangeText={setRegFullName}
+                  placeholder="Nhập họ và tên của bạn"
+                  placeholderTextColor="#A8A29E"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Số điện thoại hoặc Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regPhoneOrEmail}
+                  onChangeText={setRegPhoneOrEmail}
+                  placeholder="Nhập SĐT hoặc Email"
+                  placeholderTextColor="#A8A29E"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Mật khẩu</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regPassword}
+                  onChangeText={setRegPassword}
+                  placeholder="Tạo mật khẩu (tối thiểu 6 ký tự)"
+                  placeholderTextColor="#A8A29E"
+                  secureTextEntry
+                  onSubmitEditing={handleRegisterSubmit}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.submitBtn}
+                onPress={handleRegisterSubmit}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.submitBtnText}>Đăng ký tài khoản</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>hoặc</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google Login Button */}
+          <TouchableOpacity
+            style={styles.googleBtn}
+            onPress={handleGoogleLogin}
+            activeOpacity={0.85}
+          >
+            <GoogleIcon size={18} />
+            <Text style={styles.googleBtnText}>
+              {tab === 'login' ? 'Tiếp tục với Google' : 'Đăng ký bằng Google'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Guest Experience Link */}
+          <TouchableOpacity
+            style={styles.guestLink}
+            onPress={() => onLogin('Khách trải nghiệm')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.guestLinkText}>Trải nghiệm trực tiếp không cần mật khẩu</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );

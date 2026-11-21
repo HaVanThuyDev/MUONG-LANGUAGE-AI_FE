@@ -17,7 +17,7 @@ export default StyleSheet.create({
     width: '100%',
   },
 
-  // SIDEBAR (RESPONSIVE: DESKTOP SIDE-BY-SIDE, MOBILE/TABLET OFF-CANVAS DRAWER)
+  // SIDEBAR (SILKY-SMOOTH DRAWER ON MOBILE/TABLET, SIDE-BY-SIDE ON DESKTOP)
   sidebar: {
     width: 250,
     backgroundColor: CLAUDE_SIDEBAR,
@@ -34,13 +34,13 @@ export default StyleSheet.create({
     bottom: 0,
     zIndex: 1000,
     ...Platform.select({
-      web: { boxShadow: '4px 0 24px rgba(0,0,0,0.12)' },
-      default: { elevation: 12 },
+      web: { boxShadow: '4px 0 28px rgba(0,0,0,0.12)' },
+      default: { elevation: 16 },
     }),
   },
   sidebarBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
     zIndex: 900,
   },
   sidebarHeader: {
@@ -246,8 +246,8 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderBottomWidth: 1,
     borderBottomColor: CLAUDE_BORDER,
     backgroundColor: CLAUDE_BG,
@@ -259,18 +259,18 @@ export default StyleSheet.create({
     gap: 10,
   },
   menuToggleBtn: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: CLAUDE_BORDER,
     backgroundColor: '#FFFFFF',
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   headerTitle: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '600',
     color: CLAUDE_TEXT,
   },
@@ -282,7 +282,7 @@ export default StyleSheet.create({
   },
   chatContentContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingVertical: 18,
     maxWidth: 760,
     width: '100%',
     alignSelf: 'center',
@@ -292,11 +292,11 @@ export default StyleSheet.create({
   welcomeWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 48,
+    paddingVertical: 46,
     paddingHorizontal: 12,
   },
   welcomeWrapMobile: {
-    paddingVertical: 28,
+    paddingVertical: 24,
   },
   welcomeLogo: {
     width: 46,
@@ -322,7 +322,7 @@ export default StyleSheet.create({
   // Chat message rows
   messageRow: {
     flexDirection: 'row',
-    marginBottom: 18,
+    marginBottom: 16,
     gap: 10,
     alignItems: 'flex-start',
   },
@@ -336,7 +336,7 @@ export default StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    marginTop: 2,
+    marginTop: 3,
   },
   bubbleUser: {
     maxWidth: '82%',
@@ -346,14 +346,14 @@ export default StyleSheet.create({
     paddingVertical: 10,
   },
   bubbleUserMobile: {
-    maxWidth: '90%',
+    maxWidth: '88%',
     paddingHorizontal: 13,
     paddingVertical: 9,
   },
   bubbleAi: {
     flex: 1,
     paddingVertical: 4,
-    paddingHorizontal: 2,
+    paddingHorizontal: 4,
   },
   bubbleText: {
     fontSize: 15,
@@ -439,7 +439,7 @@ export default StyleSheet.create({
     fontSize: 15,
     color: CLAUDE_TEXT,
     lineHeight: 22,
-    minHeight: 40,
+    minHeight: 42,
     maxHeight: 130,
     padding: 0,
     backgroundColor: 'transparent',
