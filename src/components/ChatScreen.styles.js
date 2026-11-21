@@ -13,9 +13,11 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: CLAUDE_BG,
     flexDirection: 'row',
+    height: '100%',
+    width: '100%',
   },
 
-  // SIDEBAR (CLAUDE EXACT STYLE)
+  // SIDEBAR (RESPONSIVE: DESKTOP SIDE-BY-SIDE, MOBILE/TABLET OFF-CANVAS DRAWER)
   sidebar: {
     width: 250,
     backgroundColor: CLAUDE_SIDEBAR,
@@ -25,25 +27,25 @@ export default StyleSheet.create({
     justifyContent: 'space-between',
     zIndex: 100,
   },
-  sidebarMobile: {
+  sidebarOverlay: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
+    zIndex: 1000,
     ...Platform.select({
-      web: { boxShadow: '4px 0 24px rgba(0,0,0,0.08)' },
-      default: { elevation: 8 },
+      web: { boxShadow: '4px 0 24px rgba(0,0,0,0.12)' },
+      default: { elevation: 12 },
     }),
   },
   sidebarBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    zIndex: 90,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    zIndex: 900,
   },
   sidebarHeader: {
     padding: 12,
   },
-  // "+ Tạo mới" Claude Button
   newChatClaudeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -61,10 +63,10 @@ export default StyleSheet.create({
     color: CLAUDE_TEXT,
   },
 
-  // Sidebar Menu Items (Tìm kiếm, Dự án, Artifacts...)
+  // Sidebar Menu Items
   sidebarMenuList: {
     gap: 2,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sidebarMenuItem: {
     flexDirection: 'row',
@@ -125,10 +127,10 @@ export default StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.06)',
-    marginTop: 4,
+    marginTop: 2,
   },
   historySectionTitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
     color: CLAUDE_TEXT,
   },
@@ -192,7 +194,7 @@ export default StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#059669', // Claude green avatar
+    backgroundColor: '#059669',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -214,7 +216,7 @@ export default StyleSheet.create({
     maxWidth: 90,
   },
   userTier: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: CLAUDE_MUTED,
   },
   logoutBtn: {
@@ -231,11 +233,12 @@ export default StyleSheet.create({
     color: CLAUDE_MUTED,
   },
 
-  // MAIN CONTAINER
+  // MAIN CONTAINER (FULL RESPONSIVE)
   mainContainer: {
     flex: 1,
     flexDirection: 'column',
     backgroundColor: CLAUDE_BG,
+    height: '100%',
   },
 
   // Top Bar
@@ -248,6 +251,7 @@ export default StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: CLAUDE_BORDER,
     backgroundColor: CLAUDE_BG,
+    zIndex: 10,
   },
   topBarLeft: {
     flexDirection: 'row',
@@ -266,20 +270,9 @@ export default StyleSheet.create({
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   headerTitle: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '600',
     color: CLAUDE_TEXT,
-  },
-  headerBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    backgroundColor: '#ECEAE4',
-  },
-  headerBadgeText: {
-    fontSize: 12,
-    color: CLAUDE_MUTED,
-    fontWeight: '500',
   },
 
   // Chat Scroll Area
@@ -288,41 +281,49 @@ export default StyleSheet.create({
     backgroundColor: CLAUDE_BG,
   },
   chatContentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
     maxWidth: 760,
     width: '100%',
     alignSelf: 'center',
   },
 
-  // Welcome Screen
+  // Welcome Screen (Responsive)
   welcomeWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 48,
+    paddingHorizontal: 12,
+  },
+  welcomeWrapMobile: {
+    paddingVertical: 28,
   },
   welcomeLogo: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     marginBottom: 12,
   },
   welcomeTitle: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '600',
     color: CLAUDE_TEXT,
     marginBottom: 6,
+    textAlign: 'center',
   },
   welcomeDesc: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: CLAUDE_MUTED,
+    textAlign: 'center',
+    maxWidth: 420,
+    lineHeight: 20,
   },
 
   // Chat message rows
   messageRow: {
     flexDirection: 'row',
-    marginBottom: 20,
-    gap: 12,
+    marginBottom: 18,
+    gap: 10,
     alignItems: 'flex-start',
   },
   messageRowUser: {
@@ -338,11 +339,16 @@ export default StyleSheet.create({
     marginTop: 2,
   },
   bubbleUser: {
-    maxWidth: '80%',
+    maxWidth: '82%',
     backgroundColor: CLAUDE_USER_BUBBLE,
     borderRadius: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 10,
+  },
+  bubbleUserMobile: {
+    maxWidth: '90%',
+    paddingHorizontal: 13,
+    paddingVertical: 9,
   },
   bubbleAi: {
     flex: 1,
@@ -351,7 +357,7 @@ export default StyleSheet.create({
   },
   bubbleText: {
     fontSize: 15,
-    lineHeight: 24,
+    lineHeight: 23,
     color: CLAUDE_TEXT,
   },
   bubbleTextUser: {
@@ -380,12 +386,12 @@ export default StyleSheet.create({
   },
 
   // ==========================================
-  // CLAUDE EXACT CHAT INPUT CARD (IMAGE 2)
+  // RESPONSIVE CHAT INPUT CARD (CLAUDE EXACT)
   // ==========================================
   inputOuterContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
-    paddingTop: 8,
+    paddingHorizontal: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    paddingTop: 6,
     backgroundColor: CLAUDE_BG,
     alignItems: 'center',
   },
@@ -417,15 +423,15 @@ export default StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: CLAUDE_BORDER,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 10,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
     ...Platform.select({
       web: {
         outlineStyle: 'none',
         outlineWidth: 0,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
       },
     }),
   },
@@ -433,12 +439,12 @@ export default StyleSheet.create({
     fontSize: 15,
     color: CLAUDE_TEXT,
     lineHeight: 22,
-    minHeight: 44,
-    maxHeight: 140,
+    minHeight: 40,
+    maxHeight: 130,
     padding: 0,
     backgroundColor: 'transparent',
     borderWidth: 0,
-    marginBottom: 10,
+    marginBottom: 8,
     ...Platform.select({
       web: {
         outlineStyle: 'none',
@@ -449,7 +455,7 @@ export default StyleSheet.create({
     }),
   },
 
-  // BOTTOM CONTROLS BAR (IMAGE 2)
+  // BOTTOM CONTROLS BAR (RESPONSIVE FOR PHONE, IPAD, DESKTOP)
   cardBottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -458,12 +464,16 @@ export default StyleSheet.create({
     position: 'relative',
     zIndex: 50,
   },
+  cardBottomBarMobile: {
+    flexWrap: 'wrap',
+    gap: 6,
+    rowGap: 8,
+  },
   cardBottomLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
-  // Attachment "+" button
   plusAttachBtn: {
     width: 32,
     height: 32,
@@ -476,18 +486,18 @@ export default StyleSheet.create({
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
 
-  // Segmented Pill: [Đoạn chat] [Đặc sắc văn hóa]
+  // Mode Segmented Pill: [Đoạn chat] [Đặc sắc văn hóa]
   modeSegmentedWrap: {
     flexDirection: 'row',
     backgroundColor: '#F3F2EE',
-    borderRadius: 10,
-    padding: 3,
+    borderRadius: 9,
+    padding: 2.5,
     gap: 2,
   },
   modeBtn: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: 7,
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   modeBtnActive: {
@@ -497,7 +507,7 @@ export default StyleSheet.create({
     }),
   },
   modeBtnText: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: CLAUDE_MUTED,
     fontWeight: '500',
   },
@@ -506,24 +516,27 @@ export default StyleSheet.create({
     fontWeight: '600',
   },
 
-  // RIGHT CONTROLS: TOPIC DROPDOWN & SEND
+  // Right Controls: [Chủ đề] [Send]
   cardBottomRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  cardBottomRightMobile: {
+    marginLeft: 'auto',
   },
   topicSelectorTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 7,
+    gap: 4,
     backgroundColor: '#F7F6F3',
     ...Platform.select({ web: { cursor: 'pointer' } }),
   },
   topicSelectorText: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: CLAUDE_TEXT,
     fontWeight: '500',
   },
@@ -531,18 +544,23 @@ export default StyleSheet.create({
   // DROPDOWN MENU
   topicDropdownMenu: {
     position: 'absolute',
-    right: 40,
-    bottom: 44,
+    right: 36,
+    bottom: 42,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: CLAUDE_BORDER,
     borderRadius: 12,
     paddingVertical: 6,
-    width: 200,
+    width: 195,
     zIndex: 999,
     ...Platform.select({
       web: { boxShadow: '0 6px 20px rgba(0,0,0,0.12)' },
     }),
+  },
+  topicDropdownMenuMobile: {
+    right: 0,
+    bottom: 38,
+    width: 185,
   },
   topicMenuItem: {
     paddingVertical: 8,
@@ -553,7 +571,7 @@ export default StyleSheet.create({
     backgroundColor: '#F3F2EE',
   },
   topicMenuItemText: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: CLAUDE_TEXT,
   },
   topicMenuItemTextActive: {

@@ -40,9 +40,11 @@ const TOPIC_OPTIONS = [
 
 const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 768;
+  const isMobile = width < 640;
+  const isTablet = width >= 640 && width < 1024;
+  const isDesktop = width >= 1024;
 
-  // Sidebar toggle state
+  // Sidebar toggle state (closed by default on mobile/tablet, open on desktop)
   const [sidebarVisible, setSidebarVisible] = useState(isDesktop);
 
   // Mode: "Đoạn chat" | "Đặc sắc văn hóa"
@@ -295,7 +297,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FBFBF9" />
 
-      {/* MOBILE BACKDROP */}
+      {/* MOBILE / TABLET BACKDROP */}
       {!isDesktop && sidebarVisible && (
         <TouchableOpacity
           style={styles.sidebarBackdrop}
@@ -306,7 +308,13 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
 
       {/* SIDEBAR (CLAUDE EXACT STYLE) */}
       {sidebarVisible && (
-        <SafeAreaView style={[styles.sidebar, !isDesktop && styles.sidebarMobile]}>
+        <SafeAreaView
+          style={[
+            styles.sidebar,
+            !isDesktop && styles.sidebarOverlay,
+            isMobile && { width: Math.min(280, width * 0.85) },
+          ]}
+        >
           <View style={styles.sidebarHeader}>
             {/* "+ Tạo mới" Claude Button */}
             <TouchableOpacity
@@ -473,13 +481,13 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
           >
             {/* WELCOME SCREEN (CLAUDE EXACT STYLE) */}
             {messages.length === 0 && (
-              <View style={styles.welcomeWrap}>
+              <View style={[styles.welcomeWrap, isMobile && styles.welcomeWrapMobile]}>
                 <Image
                   source={require('../../assets/logo_muong.png')}
-                  style={styles.welcomeLogo}
+                  style={[styles.welcomeLogo, isMobile && { width: 40, height: 40, borderRadius: 20 }]}
                 />
-                <Text style={styles.welcomeTitle}>AI Ngôn ngữ Mường</Text>
-                <Text style={styles.welcomeDesc}>
+                <Text style={[styles.welcomeTitle, isMobile && { fontSize: 18.5 }]}>AI Ngôn ngữ Mường</Text>
+                <Text style={[styles.welcomeDesc, isMobile && { fontSize: 12.5, maxWidth: 300 }]}>
                   Tra cứu từ vựng và giải đáp văn hóa dân tộc Mường
                 </Text>
               </View>
@@ -500,11 +508,11 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                     />
                   )}
 
-                  <View style={isUser ? styles.bubbleUser : styles.bubbleAi}>
+                  <View style={isUser ? [styles.bubbleUser, isMobile && styles.bubbleUserMobile] : styles.bubbleAi}>
                     {msg.image?.uri && (
                       <Image
                         source={{ uri: msg.image.uri }}
-                        style={styles.bubbleImage}
+                        style={[styles.bubbleImage, isMobile && { width: Math.min(220, width * 0.7), height: 140 }]}
                         resizeMode="cover"
                       />
                     )}
@@ -574,25 +582,26 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                   blurOnSubmit={false}
                 />
 
-                {/* Bottom Controls Bar (Image 2) */}
-                <View style={styles.cardBottomBar}>
+                {/* Bottom Controls Bar (Image 2 - Responsive) */}
+                <View style={[styles.cardBottomBar, isMobile && styles.cardBottomBarMobile]}>
                   {/* Left: [+] [Đoạn chat] [Đặc sắc văn hóa] */}
-                  <View style={styles.cardBottomLeft}>
+                  <View style={[styles.cardBottomLeft, isMobile && styles.cardBottomLeftMobile]}>
                     {/* [+] Upload Image/File Button */}
                     <TouchableOpacity
-                      style={styles.plusAttachBtn}
+                      style={[styles.plusAttachBtn, isMobile && { width: 30, height: 30 }]}
                       onPress={handlePickImage}
                       activeOpacity={0.7}
                       title="Đính kèm ảnh hoặc tệp"
                     >
-                      <PlusIcon size={15} color="#57534E" />
+                      <PlusIcon size={isMobile ? 14 : 15} color="#57534E" />
                     </TouchableOpacity>
 
                     {/* Segmented Pill: [Đoạn chat] [Đặc sắc văn hóa] */}
-                    <View style={styles.modeSegmentedWrap}>
+                    <View style={[styles.modeSegmentedWrap, isMobile && { padding: 2 }]}>
                       <TouchableOpacity
                         style={[
                           styles.modeBtn,
+                          isMobile && { paddingHorizontal: 7, paddingVertical: 4 },
                           activeMode === 'chat' && styles.modeBtnActive,
                         ]}
                         onPress={() => setActiveMode('chat')}
@@ -601,6 +610,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                         <Text
                           style={[
                             styles.modeBtnText,
+                            isMobile && { fontSize: 11.5 },
                             activeMode === 'chat' && styles.modeBtnTextActive,
                           ]}
                         >
@@ -611,6 +621,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                       <TouchableOpacity
                         style={[
                           styles.modeBtn,
+                          isMobile && { paddingHorizontal: 7, paddingVertical: 4 },
                           activeMode === 'culture' && styles.modeBtnActive,
                         ]}
                         onPress={() => setActiveMode('culture')}
@@ -619,6 +630,7 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                         <Text
                           style={[
                             styles.modeBtnText,
+                            isMobile && { fontSize: 11.5 },
                             activeMode === 'culture' && styles.modeBtnTextActive,
                           ]}
                         >
@@ -629,10 +641,13 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                   </View>
 
                   {/* Right: [Topic Selector] [Send Button] */}
-                  <View style={styles.cardBottomRight}>
+                  <View style={[styles.cardBottomRight, isMobile && styles.cardBottomRightMobile]}>
                     {/* Topic Selector Trigger (Sonet 5.5 replaced with Topics) */}
                     <TouchableOpacity
-                      style={styles.topicSelectorTrigger}
+                      style={[
+                        styles.topicSelectorTrigger,
+                        isMobile && { paddingVertical: 4, paddingHorizontal: 7 },
+                      ]}
                       onPress={() => setTopicDropdownOpen((prev) => !prev)}
                       activeOpacity={0.7}
                       {...(Platform.OS === 'web'
@@ -641,14 +656,23 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                           }
                         : {})}
                     >
-                      <Text style={styles.topicSelectorText}>{selectedTopic}</Text>
-                      <ChevronDownIcon size={12} color="#78756E" />
+                      <Text
+                        style={[
+                          styles.topicSelectorText,
+                          isMobile && { fontSize: 11.5, maxWidth: 110 },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {selectedTopic}
+                      </Text>
+                      <ChevronDownIcon size={isMobile ? 10 : 12} color="#78756E" />
                     </TouchableOpacity>
 
                     {/* Send Button */}
                     <TouchableOpacity
                       style={[
                         styles.claudeSendBtn,
+                        isMobile && { width: 30, height: 30 },
                         (!text.trim() && !selectedImage) || loading
                           ? styles.claudeSendBtnDisabled
                           : null,
@@ -657,14 +681,17 @@ const ChatScreen = ({ username = 'Người dùng', onLogout }) => {
                       disabled={(!text.trim() && !selectedImage) || loading}
                       activeOpacity={0.8}
                     >
-                      <ArrowUpIcon size={15} color="#FFFFFF" />
+                      <ArrowUpIcon size={isMobile ? 13 : 15} color="#FFFFFF" />
                     </TouchableOpacity>
                   </View>
 
                   {/* Dropdown Menu for Topic Selection */}
                   {topicDropdownOpen && (
                     <View
-                      style={styles.topicDropdownMenu}
+                      style={[
+                        styles.topicDropdownMenu,
+                        isMobile && styles.topicDropdownMenuMobile,
+                      ]}
                       {...(Platform.OS === 'web'
                         ? {
                             onMouseLeave: () => setTopicDropdownOpen(false),
